@@ -1,0 +1,26 @@
+let
+    access_token = "your_token_here",  // Get this from your token query
+
+    // Get OrgUnitIds from the OrgUnits query
+    orgUnitIds = Table.Column(OrgUnits, "OrganizationUnitId"),
+
+    // Function to fetch data for one OrgUnitId
+    fetchOUData = (orgId as text) =>
+        let
+            api_url = "https://cloud.uipath.com/bny_rpa_attended_nonprod/Pershing_Robotics/orchestrator_/odata/Jobs",
+            response = Json.Document(Web.Contents(api_url,
+                [
+                    Headers = [
+                        Authorization = "Bearer " & access_token,
+                        #"X-UIPATH-OrganizationUnitId" = orgId
+                    ]
+                ])),
+            output = Table.FromRecords(response[value])
+        in
+            output,
+
+    // Loop over OrgUnitIds and fetch data
+    results = List.Transform(orgUnitIds, each fetchOUData(Text.From(_))),
+    combined = Table.Combine(results)
+in
+    combined
